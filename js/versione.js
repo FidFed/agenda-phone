@@ -1,2 +1,2 @@
 // Generato da mobile/build.mjs
-export const VERSIONE = '42021437985d';
+export const VERSIONE = '7a56cb479038';

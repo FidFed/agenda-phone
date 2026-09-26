@@ -226,17 +226,40 @@ export function eventParticipants(archive, event) {
     .filter((x) => x.person);
 }
 
-/** Chi cita la persona in campi di tipo person/people: [{ person, field }] in ordine di nome. */
-export function backlinks(archive, personId) {
+/**
+ * Campo di destinazione di un campo reciproco (v1.5, SPEC §12): sé stesso per `reciprocal: "self"`, il campo inverso
+ * per una coppia (Figli ↔ Genitori); null se il campo non è reciproco. Stessa regola di `reciprocalTarget` del server.
+ */
+export function reciprocalTarget(schema, field) {
+  if (!field || (field.type !== 'person' && field.type !== 'people') || !field.reciprocal) return null;
+  if (field.reciprocal === 'self') return field;
+  const t = fieldById(schema, field.reciprocal);
+  return t && (t.type === 'person' || t.type === 'people') ? t : null;
+}
+
+/**
+ * Chi cita la persona in campi di tipo person/people: [{ person, field }] in ordine di nome. Con `hideReciprocal`
+ * (profilo, «Citato da») si saltano i collegamenti di campi reciproci già visibili nel campo della persona stessa.
+ */
+export function backlinks(archive, personId, { hideReciprocal = false } = {}) {
   const refFields = (archive?.schema?.fields || []).filter((f) => f && (f.type === 'person' || f.type === 'people'));
   if (!refFields.length) return [];
+  const own = archive?.people?.[personId]?.fields || {};
   const out = [];
   for (const person of objValues(archive?.people)) {
     if (!person || person.id === personId) continue;
     for (const field of refFields) {
       const v = person.fields?.[field.id];
       const refs = Array.isArray(v) ? v : v ? [v] : [];
-      if (refs.some((r) => refersTo(r, personId))) out.push({ person, field });
+      if (!refs.some((r) => refersTo(r, personId))) continue;
+      // Campo reciproco (v1.5) già visibile sul profilo: se X cita questa persona in «Partner» e lei ha X nel
+      // campo di destinazione, «Citato da» lo ripeterebbe.
+      if (hideReciprocal) {
+        const target = reciprocalTarget(archive.schema, field);
+        const mine = target ? own[target.id] : undefined;
+        if (target && (Array.isArray(mine) ? mine : mine ? [mine] : []).some((r) => refersTo(r, person.id))) continue;
+      }
+      out.push({ person, field });
     }
   }
   return out.sort((a, b) => compareText(displayName(a.person), displayName(b.person)) || compareText(a.field.label, b.field.label));

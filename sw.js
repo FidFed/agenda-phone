@@ -3,7 +3,7 @@
 // il pacchetto non passa mai dalla rete (arriva dal selettore di file e resta cifrato in IndexedDB).
 // Strategia: cache-first per i file dell'elenco; tutto il resto non viene toccato.
 
-const VERSIONE = "42021437985d";
+const VERSIONE = "7a56cb479038";
 const CACHE = `agenda-app-${VERSIONE}`;
 const FILE = [
   "./",

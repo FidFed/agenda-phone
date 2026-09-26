@@ -176,7 +176,7 @@ function Profile({ archive, person }) {
 
   const events = useMemo(() => eventsOfPerson(archive, person.id), [archive.events, person.id]);
   const groups = useMemo(() => groupsOfPerson(archive, person.id), [archive.groups, person.id]);
-  const cited = useMemo(() => backlinks(archive, person.id), [archive.people, schema, person.id]);
+  const cited = useMemo(() => backlinks(archive, person.id, { hideReciprocal: true }), [archive.people, schema, person.id]);
   const seen = useMemo(() => lastSeen(archive, person.id, today), [events, today]);
   const met = useMemo(() => firstMet(archive, person), [person, schema, archive.events]);
   const metEvent = useMemo(() => firstMeetingEvent(archive, person) || (met.fromEvent ? met.event : null), [person, schema, archive.events, met]);
